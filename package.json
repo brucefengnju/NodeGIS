@@ -1,0 +1,12 @@
+{
+  "name": "NodeGIS",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": ">=2.0.0",
+    "redis":">=0.8.2",
+	"node-uuid":">=1.4.0",
+	"jsdom":">=0.3.4"
+	
+  }
+}
