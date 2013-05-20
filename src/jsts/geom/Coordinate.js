@@ -31,7 +31,7 @@
       this.y = parseFloat(x.y);
       this.z = parseFloat(x.z);
       this.m = parseFloat(x.m);
-    } else if (x === undefined || x === null || y === undefined || y === null) {
+    } else if (typeof x === 'undefined' || x === null || typeof y === 'undefined' || y === null) {
       this.x = 0;
       this.y = 0;
     } else if (typeof x === 'string') {
@@ -42,7 +42,7 @@
       this.z = z;
     }else if(typeof z === 'string'){
       this.z = parseFloat(z);
-    }else if(undefined == z || null == z){
+    }else if('undefined' == typeof z || null == z){
       this.z = null;
     }
     
@@ -50,7 +50,7 @@
       this.m = m;
     }else if(typeof m === 'string'){
       this.m = parseFloat(m);
-    }else if(undefined == m || null == m){
+    }else if('undefined' == typeof m || null == m){
       this.m = null;
     }
   };
@@ -126,10 +126,15 @@
    *         ordinates.
    */
   jsts.geom.Coordinate.prototype.equals = function(other) {
-    if (!other instanceof jsts.geom.Coordinate || other === undefined) {
+    if (!other instanceof jsts.geom.Coordinate || typeof other === 'undefined') {
       return false;
     }
-    return this.equals2D(other) && this.z === other.z;
+    if(this.z!== null && typeof this.z!== 'undefined'){
+      return this.equals2D(other) && this.z === other.z;  
+    }else{
+      return this.equals2D(other);
+    }
+    
   };
 
   /**
@@ -162,22 +167,24 @@
     if (this.y > other.y) {
       return 1;
     }
-    if(this.z < other.z){
-      return -1;
+    if(this.z !== null && typeof this.z !== 'undefined' 
+      && other.z !== null && typeof other.z !== 'undefined'){
+      if(this.z < other.z){
+        return -1;
+      }
+      if(this.z > other.z){
+        return 1;
+      }  
     }
-    if(this.z > other.z){
-      return 1;
-    }
-
     return 0;
   };
 
   jsts.geom.Coordinate.prototype.toString = function() {
     var coordStr = '(' + this.x + ', ' + this.y ;
-    if(null != this.z){
+    if(null != this.z && 'undefined'!= typeof this.z){
       coordStr += ',' + this.z;
     }
-    if(null != this.m){
+    if(null != this.m && 'undefined'!= typeof this.m){
       coordStr += ',' + this.m;
     }
     coordStr += ')';
