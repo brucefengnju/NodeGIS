@@ -110,7 +110,6 @@
    *         equal; the z-coordinates do not have to be equal.
    */
   jsts.geom.Coordinate.prototype.equals2D = function(other) {
-
     return this.x === other.x && this.y === other.y;
   };
 
