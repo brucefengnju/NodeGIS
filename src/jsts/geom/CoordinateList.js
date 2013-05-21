@@ -122,9 +122,24 @@ jsts.geom.CoordinateList.prototype.insertCoordinate = function(index, coord,
 jsts.geom.CoordinateList.prototype.insertCoordinates = function(index,coords,allowRepeated){
   if(coords && coords.length){
     var il = coords.length;
-    for(var i =0;i<il;i++){
-      this.insertCoordinate(index + i,coords[i],allowRepeated);
-    }
+      if(!allowRepeated){
+        for(var i=0;i<il;i++){
+          var repeated = false;
+          for(var j=0;j<this.length;j++){
+            if(this[j].equals(coords[i])){
+              repeated = true;
+              break;
+            }
+          }
+          if(!repeated){
+            this.splice(index++, 0, coords[i]);
+          }
+        }
+      }else{
+        for(var i= 0;i<il;i++){
+          this.splice(index++, 0, coords[i]);
+        }        
+      }
   }
 }
 
