@@ -33,6 +33,19 @@ jsts.geom.Envelope = function() {
   jsts.geom.Envelope.prototype.init.apply(this, arguments);
 };
 
+/**
+ * the minimum coordinate
+ *
+ * @type {?Coordinate}
+ **/
+ 
+jsts.geom.Envelope.prototype.minCoord = null;
+/**
+ * the maxmum coordinate
+ *
+ * @type {?Coordinate}
+ **/
+jsts.geom.Envelope.prototype.maxCoord = null;
 
 /**
  * the minimum x-coordinate
