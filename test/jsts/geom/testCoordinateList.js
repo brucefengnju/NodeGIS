@@ -80,6 +80,26 @@ test('coordinateList constructor',function () {
     coordList.insertCoordinate(1,coord2,true);
     return 2 == length1 && 3 == coordList.length && coordList[1].equals(coord2);
   });
+  test('CoordinateList.insertCoordinates:insert an array of coordinates',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(2,2,0);
+    var coordList = new jsts.geom.CoordinateList();
+    var olength = coordList.length;
+    coordList.insertCoordinates(0,[coord,coord1,coord2]);
+    return 0 == olength && 3 == coordList.length && coordList[0].equals(coord)
+            && coordList[1].equals(coord1) && coordList[2].equals(coord2);
+  });
+test('CoordinateList.insertCoordinates:insert an array of coordinates repeated',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList();
+    var olength = coordList.length;
+    coordList.insertCoordinates(0,[coord,coord1,coord2],true);
+    return 0 == olength && 3 == coordList.length && coordList[0].equals(coord)
+            && coordList[1].equals(coord1) && coordList[2].equals(coord2);
+  });
   test('CoordinateList.toArray: coordlist to array',function(){
     var coord = new jsts.geom.Coordinate();
     var coord1 = new jsts.geom.Coordinate(1,1);
@@ -89,3 +109,11 @@ test('coordinateList constructor',function () {
     return 3 == coordArray.length && coordArray instanceof Array && coordArray[0].equals(coord)
             && coordArray[1].equals(coord1) && coordArray[2].equals(coord2);
   });
+test('CoordinateList.toString: to string ',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList([coord,coord1,coord2]);
+    console.log(coordList.toString());
+    return '' !== coordList.toString();
+});
