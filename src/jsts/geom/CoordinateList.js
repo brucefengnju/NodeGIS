@@ -14,17 +14,17 @@
  * CoordinateList does not seem to be used extensively which would warrant keeping the API.
  *
  * @param {Array.<jsts.geom.Coordinate>}
- *          coord the array of coordinates to load into the list.
+ *          coords the array of coordinates to load into the list.
  * @param {boolean} 
  *          allowRepeated if <code>false</code>, repeated points are removed.
  *
  * @constructor
  */
-jsts.geom.CoordinateList = function(coord, allowRepeated) {
-  allowRepeated = (allowRepeated === undefined) ? true : allowRepeated;
+jsts.geom.CoordinateList = function(coords, allowRepeated) {
+  allowRepeated = (typeof allowRepeated === 'undefined') ? true : allowRepeated;
 
-  if (coord !== undefined) {
-    this.add(coord, allowRepeated);
+  if (coords && coords.length) {
+    this.add(coords, allowRepeated);
   }
 };
 
@@ -75,7 +75,7 @@ jsts.geom.CoordinateList.prototype.addCoordinate = function(coord,
   if (!allowRepeated) {
     if (this.length >= 1) {
       var last = this[this.length - 1];
-      if (last.equals2D(coord))
+      if (last.equals(coord))
         return;
     }
   }
@@ -97,12 +97,12 @@ jsts.geom.CoordinateList.prototype.insertCoordinate = function(index, coord,
   // don't add duplicate coordinates
   if (!allowRepeated) {
     var before = index > 0 ? index - 1 : -1;
-    if (before !== -1 && this[before].equals2D(coord)) {
+    if (before !== -1 && this[before].equals(coord)) {
       return;
     }
 
     var after = index < this.length - 1 ? index + 1 : -1;
-    if (after !== -1 && this[after].equals2D(coord)) {
+    if (after !== -1 && this[after].equals(coord)) {
       return;
     }
   }
