@@ -166,6 +166,10 @@
     if (this.y > other.y) {
       return 1;
     }
+    if(this.z !== null && other.z=== null 
+      || this.z=== null && other.z !== null){
+      throw new Error('need be same dimension');
+    }
     if(this.z !== null && typeof this.z !== 'undefined' 
       && other.z !== null && typeof other.z !== 'undefined'){
       if(this.z < other.z){

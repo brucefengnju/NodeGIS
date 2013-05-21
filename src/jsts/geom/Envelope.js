@@ -9,7 +9,7 @@
  */
 
 /**
- * Defines a rectangular region of the 2D coordinate plane. It is often used to
+ * Defines a rectangular region of coordinate plane. It is often used to
  * represent the bounding box of a {@link Geometry}, e.g. the minimum and
  * maximum x and y values of the {@link Coordinate}s.
  * <p>
@@ -65,6 +65,19 @@ jsts.geom.Envelope.prototype.miny = null;
  */
 jsts.geom.Envelope.prototype.maxy = null;
 
+/**
+ * the minimum z-coordinate
+ *
+ * @type {?number}
+ **/
+jsts.geom.Envelope.prototype.minz = null;
+
+/**
+ * the maxmum z-coordinate
+ *
+ * @type {?number}
+ **/
+jsts.geom.Envelope.prototype.maxz = null;
 
 /**
  * Creates an <code>Envelope</code> for a region defined by maximum and
@@ -73,50 +86,11 @@ jsts.geom.Envelope.prototype.maxy = null;
  * Will call appropriate init* method depending on arguments.
  */
 jsts.geom.Envelope.prototype.init = function() {
-  if (typeof arguments[0] === 'number' && arguments.length === 4) {
-    this.initFromValues(arguments[0], arguments[1], arguments[2], arguments[3]);
-  } else if (arguments[0] instanceof jsts.geom.Coordinate &&
-      arguments.length === 1) {
-    this.initFromCoordinate(arguments[0]);
-  } else if (arguments[0] instanceof jsts.geom.Coordinate &&
+  if (arguments[0] instanceof jsts.geom.Coordinate &&
       arguments.length === 2) {
     this.initFromCoordinates(arguments[0], arguments[1]);
-  } else if (arguments[0] instanceof jsts.geom.Envelope &&
-      arguments.length === 1) {
-    this.initFromEnvelope(arguments[0]);
-  } else {
+  }else {
     this.setToNull();
-  }
-};
-
-
-/**
- * Initialize an <code>Envelope</code> for a region defined by maximum and
- * minimum values.
- *
- * @param {number}
- *          x1 the first x-value.
- * @param {number}
- *          x2 the second x-value.
- * @param {number}
- *          y1 the first y-value.
- * @param {number}
- *          y2 the second y-value.
- */
-jsts.geom.Envelope.prototype.initFromValues = function(x1, x2, y1, y2) {
-  if (x1 < x2) {
-    this.minx = x1;
-    this.maxx = x2;
-  } else {
-    this.minx = x2;
-    this.maxx = x1;
-  }
-  if (y1 < y2) {
-    this.miny = y1;
-    this.maxy = y2;
-  } else {
-    this.miny = y2;
-    this.maxy = y1;
   }
 };
 
@@ -130,19 +104,14 @@ jsts.geom.Envelope.prototype.initFromValues = function(x1, x2, y1, y2) {
  *          p2 the second Coordinate.
  */
 jsts.geom.Envelope.prototype.initFromCoordinates = function(p1, p2) {
-  this.initFromValues(p1.x, p2.x, p1.y, p2.y);
-};
+  if(p1.compareTo(p2) === -1){
+    this.minCoord = p1;
+    this.maxCoord = p2;
+  }else{
+    this.minCoord = p2;
+    this.maxCoord = p1;
+  }
 
-
-/**
- * Initialize an <code>Envelope</code> to a region defined by a single
- * Coordinate.
- *
- * @param {jsts.geom.Coordinate}
- *          p the Coordinate.
- */
-jsts.geom.Envelope.prototype.initFromCoordinate = function(p) {
-  this.initFromValues(p.x, p.x, p.y, p.y);
 };
 
 
@@ -153,34 +122,35 @@ jsts.geom.Envelope.prototype.initFromCoordinate = function(p) {
  *          env the Envelope to initialize from.
  */
 jsts.geom.Envelope.prototype.initFromEnvelope = function(env) {
-  this.minx = env.minx;
-  this.maxx = env.maxx;
-  this.miny = env.miny;
-  this.maxy = env.maxy;
+  this.minCoord = evn.minCoord;
+  this.maxCoord = evn.maxCoord;
 };
+
+jsts.geom.Envelope.prototype.initFromEnvelope2D = function(env2D){
+  this.minCoord = new jsts.geom.Coordinate(env2D.minx,env2D.miny);
+  this.maxCoord = new jsts.geom.Coordinate(env2D.maxx,env2D.maxy);
+}
 
 
 /**
- * Makes this <code>Envelope</code> a "null" envelope, that is, the envelope
+ * Makes this <code>Envelope</code> a "null" Envelope, that is, the Envelope
  * of the empty geometry.
  */
 jsts.geom.Envelope.prototype.setToNull = function() {
-  this.minx = 0;
-  this.maxx = -1;
-  this.miny = 0;
-  this.maxy = -1;
+  this.minCoord = new jsts.geom.Coordinate(0,-1);
+  this.maxCoord = new jsts.geom.Coordinate(-1,0);
 };
 
 
 /**
  * Returns <code>true</code> if this <code>Envelope</code> is a "null"
- * envelope.
+ * Envelope.
  *
  * @return {boolean} <code>true</code> if this <code>Envelope</code> is
- *         uninitialized or is the envelope of the empty geometry.
+ *         uninitialized or is the Envelope of the empty geometry.
  */
 jsts.geom.Envelope.prototype.isNull = function() {
-  return this.maxx < this.minx;
+  return this.minCoord.compareTo(this.maxCoord) > 0;
 };
 
 
@@ -193,7 +163,7 @@ jsts.geom.Envelope.prototype.getHeight = function() {
   if (this.isNull()) {
     return 0;
   }
-  return this.maxy - this.miny;
+  return this.maxCoord.y - this.minCoord.y;
 };
 
 
@@ -206,63 +176,55 @@ jsts.geom.Envelope.prototype.getWidth = function() {
   if (this.isNull()) {
     return 0;
   }
-  return this.maxx - this.minx;
+  return this.maxCoord.x - this.minCoord.x;
 };
 
+jsts.geom.Envelope.prototype.getDepth = function(){
+  if(this.isNull()){
+    return 0;
+  }
+  if(this.minCoord.z !== null && this.maxCoord.z != null){
+    return this.maxCoord.z - this.minCoord.z;
+  }else{
+    return 0;
+  }
+}
 
 /**
- * Returns the <code>Envelope</code>s minimum x-value. min x > max x
- * indicates that this is a null <code>Envelope</code>.
+ * Gets the min coordinate
  *
- * @return {number} the minimum x-coordinate.
- */
-jsts.geom.Envelope.prototype.getMinX = function() {
-  return this.minx;
-};
-
+ * @return {Coordinate}
+ **/
+jsts.geom.Envelope.prototype.getMinCoordinate  = function(){
+  return this.minCoord;
+}
 
 /**
- * Returns the <code>Envelope</code>s maximum x-value. min x > max x
- * indicates that this is a null <code>Envelope</code>.
+ * Gets the min coordinate
  *
- * @return {number} the maximum x-coordinate.
- */
-jsts.geom.Envelope.prototype.getMaxX = function() {
-  return this.maxx;
-};
-
+ * @return {Coordinate}
+ **/
+jsts.geom.Envelope.prototype.getMaxCoordinate = function(){
+  return this.maxCoord;
+}
 
 /**
- * Returns the <code>Envelope</code>s minimum y-value. min y > max y
- * indicates that this is a null <code>Envelope</code>.
+ * Gets the area of this Envelope.
  *
- * @return {number} the minimum y-coordinate.
- */
-jsts.geom.Envelope.prototype.getMinY = function() {
-  return this.miny;
-};
-
-
-/**
- * Returns the <code>Envelope</code>s maximum y-value. min y > max y
- * indicates that this is a null <code>Envelope</code>.
- *
- * @return {number} the maximum y-coordinate.
- */
-jsts.geom.Envelope.prototype.getMaxY = function() {
-  return this.maxy;
-};
-
-
-/**
- * Gets the area of this envelope.
- *
- * @return {number} the area of the envelope, 0.0 if the envelope is null.
+ * @return {number} the area of the Envelope, 0.0 if the Envelope is null.
  */
 jsts.geom.Envelope.prototype.getArea = function() {
   return getWidth() * getHeight();
 };
 
+/**
+ * Gets the volume of this Envelope.
+ *
+ * @return {number} the volume of the Envelope, 0.0 if the Envelope is null.
+ */
+jsts.geom.Envelope.prototype.getVolume = function(){
+  return getWidth() * getHeight() * getDepth();
+}
 
 /**
  * Enlarges this <code>Envelope</code>
@@ -274,16 +236,14 @@ jsts.geom.Envelope.prototype.expandToInclude = function() {
     this.expandToIncludeCoordinate(arguments[0]);
   } else if (arguments[0] instanceof jsts.geom.Envelope) {
     this.expandToIncludeEnvelope(arguments[0]);
-  } else {
-    this.expandToIncludeValues(arguments[0], arguments[1]);
-  }
+  } 
 };
 
 
 /**
  * Enlarges this <code>Envelope</code> so that it contains the given
  * {@link Coordinate}. Has no effect if the point is already on or within the
- * envelope.
+ * Envelope.
  *
  * @param {jsts.geom.Coordinate}
  *          p the Coordinate to expand to include.
@@ -294,41 +254,9 @@ jsts.geom.Envelope.prototype.expandToIncludeCoordinate = function(p) {
 
 
 /**
- * Enlarges this <code>Envelope</code> so that it contains the given point.
- * Has no effect if the point is already on or within the envelope.
- *
- * @param {number}
- *          x the value to lower the minimum x to or to raise the maximum x to.
- * @param {number}
- *          y the value to lower the minimum y to or to raise the maximum y to.
- */
-jsts.geom.Envelope.prototype.expandToIncludeValues = function(x, y) {
-  if (this.isNull()) {
-    this.minx = x;
-    this.maxx = x;
-    this.miny = y;
-    this.maxy = y;
-  } else {
-    if (x < this.minx) {
-      this.minx = x;
-    }
-    if (x > this.maxx) {
-      this.maxx = x;
-    }
-    if (y < this.miny) {
-      this.miny = y;
-    }
-    if (y > this.maxy) {
-      this.maxy = y;
-    }
-  }
-};
-
-
-/**
  * Enlarges this <code>Envelope</code> so that it contains the
  * <code>other</code> Envelope. Has no effect if <code>other</code> is
- * wholly on or within the envelope.
+ * wholly on or within the Envelope.
  *
  * @param {jsts.geom.Envelope}
  *          other the <code>Envelope</code> to expand to include.
@@ -374,11 +302,11 @@ jsts.geom.Envelope.prototype.expandBy = function() {
 
 
 /**
- * Expands this envelope by a given distance in all directions. Both positive
+ * Expands this Envelope by a given distance in all directions. Both positive
  * and negative distances are supported.
  *
  * @param {number}
- *          distance the distance to expand the envelope.
+ *          distance the distance to expand the Envelope.
  */
 jsts.geom.Envelope.prototype.expandByDistance = function(distance) {
   this.expandByDistances(distance, distance);
@@ -386,13 +314,13 @@ jsts.geom.Envelope.prototype.expandByDistance = function(distance) {
 
 
 /**
- * Expands this envelope by a given distance in all directions. Both positive
+ * Expands this Envelope by a given distance in all directions. Both positive
  * and negative distances are supported.
  *
  * @param {number}
- *          deltaX the distance to expand the envelope along the the X axis.
+ *          deltaX the distance to expand the Envelope along the the X axis.
  * @param {number}
- *          deltaY the distance to expand the envelope along the the Y axis.
+ *          deltaY the distance to expand the Envelope along the the Y axis.
  */
 jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY) {
   if (this.isNull()) {
@@ -404,7 +332,7 @@ jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY) {
   this.miny -= deltaY;
   this.maxy += deltaY;
 
-  // check for envelope disappearing
+  // check for Envelope disappearing
   if (this.minx > this.maxx || this.miny > this.maxy) {
     this.setToNull();
   }
@@ -412,7 +340,7 @@ jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY) {
 
 
 /**
- * Translates this envelope by given amounts in the X and Y direction.
+ * Translates this Envelope by given amounts in the X and Y direction.
  *
  * @param {number}
  *          transX the amount to translate along the X axis.
@@ -429,11 +357,11 @@ jsts.geom.Envelope.prototype.translate = function(transX, transY) {
 
 
 /**
- * Computes the coordinate of the centre of this envelope (as long as it is
+ * Computes the coordinate of the centre of this Envelope (as long as it is
  * non-null
  *
- * @return {jsts.geom.Coordinate} the centre coordinate of this envelope <code>null</code>
- *         if the envelope is null.
+ * @return {jsts.geom.Coordinate} the centre coordinate of this Envelope <code>null</code>
+ *         if the Envelope is null.
  */
 jsts.geom.Envelope.prototype.centre = function() {
   if (this.isNull()) {
@@ -448,9 +376,9 @@ jsts.geom.Envelope.prototype.centre = function() {
  * Computes the intersection of two {@link Envelopes}
  *
  * @param {jsts.geom.Envelope}
- *          env the envelope to intersect with.
+ *          env the Envelope to intersect with.
  * @return {jsts.geom.Envelope} a new Envelope representing the intersection of
- *         the envelopes (this will be the null envelope if either argument is
+ *         the Envelopes (this will be the null Envelope if either argument is
  *         null, or they do not intersect.
  */
 jsts.geom.Envelope.prototype.intersection = function(env) {
@@ -565,7 +493,7 @@ jsts.geom.Envelope.prototype.contains = function() {
  * <code>Envelope</code> (inclusive of the boundary).
  * <p>
  * Note that this is <b>not</b> the same definition as the SFS
- * <tt>contains</tt>, which would exclude the envelope boundary.
+ * <tt>contains</tt>, which would exclude the Envelope boundary.
  *
  * @param {jsts.geom.Envelope}
  *          other the <code>Envelope</code> to check.
@@ -580,10 +508,10 @@ jsts.geom.Envelope.prototype.containsEnvelope = function(other) {
 
 
 /**
- * Tests if the given point lies in or on the envelope.
+ * Tests if the given point lies in or on the Envelope.
  * <p>
  * Note that this is <b>not</b> the same definition as the SFS
- * <tt>contains</tt>, which would exclude the envelope boundary.
+ * <tt>contains</tt>, which would exclude the Envelope boundary.
  *
  * @param {jsts.geom.Coordinate}
  *          p the point which this <code>Envelope</code> is being checked for
@@ -599,10 +527,10 @@ jsts.geom.Envelope.prototype.containsCoordinate = function(p) {
 
 
 /**
- * Tests if the given point lies in or on the envelope.
+ * Tests if the given point lies in or on the Envelope.
  * <p>
  * Note that this is <b>not</b> the same definition as the SFS
- * <tt>contains</tt>, which would exclude the envelope boundary.
+ * <tt>contains</tt>, which would exclude the Envelope boundary.
  *
  * @param {number}
  *          x the x-coordinate of the point which this <code>Envelope</code>
@@ -621,7 +549,7 @@ jsts.geom.Envelope.prototype.containsValues = function(x, y) {
 
 
 /**
- * Tests if the given point lies in or on the envelope.
+ * Tests if the given point lies in or on the Envelope.
  *
  * Will call appropriate contains* depending on arguments.
  */
@@ -637,7 +565,7 @@ jsts.geom.Envelope.prototype.covers = function() {
 
 
 /**
- * Tests if the given point lies in or on the envelope.
+ * Tests if the given point lies in or on the Envelope.
  *
  * @param {number}
  *          x the x-coordinate of the point which this <code>Envelope</code>
@@ -657,7 +585,7 @@ jsts.geom.Envelope.prototype.coversValues = function(x, y) {
 
 
 /**
- * Tests if the given point lies in or on the envelope.
+ * Tests if the given point lies in or on the Envelope.
  *
  * @param {jsts.geom.Coordinate}
  *          p the point which this <code>Envelope</code> is being checked for
@@ -717,7 +645,7 @@ jsts.geom.Envelope.prototype.distance = function(env) {
     dy = this.miny - env.maxy;
   }
 
-  // if either is zero, the envelopes overlap either vertically or horizontally
+  // if either is zero, the Envelopes overlap either vertically or horizontally
   if (dx === 0.0) {
     return dy;
   }
@@ -731,7 +659,7 @@ jsts.geom.Envelope.prototype.distance = function(env) {
 /**
  * @param {jsts.geom.Envelope}
  *          other the <code>Envelope</code> to check against.
- * @return {boolean} true if envelopes are equal.
+ * @return {boolean} true if Envelopes are equal.
  */
 jsts.geom.Envelope.prototype.equals = function(other) {
   if (this.isNull()) {
@@ -758,12 +686,12 @@ jsts.geom.Envelope.prototype.toString = function() {
  * overloaded function
  *
  * @param {jsts.geom.Coordinate}
- *          p1 one extremal point of the envelope.
+ *          p1 one extremal point of the Envelope.
  * @param {jsts.geom.Coordinate}
- *          p2 another extremal point of the envelope.
+ *          p2 another extremal point of the Envelope.
  * @param {jsts.geom.Coordinate}
  *          q the point to test for intersection.
- * @return {boolean} <code>true</code> if q intersects the envelope p1-p2.
+ * @return {boolean} <code>true</code> if q intersects the Envelope p1-p2.
  */
 jsts.geom.Envelope.intersects = function(p1, p2, q) {
   if (arguments.length === 4) {
@@ -784,17 +712,17 @@ jsts.geom.Envelope.intersects = function(p1, p2, q) {
 
 
 /**
- * Test the envelope defined by p1-p2 for intersection with the envelope defined
+ * Test the Envelope defined by p1-p2 for intersection with the Envelope defined
  * by q1-q2
  *
  * @param {jsts.geom.Coordinate}
- *          p1 one extremal point of the envelope P.
+ *          p1 one extremal point of the Envelope P.
  * @param {jsts.geom.Coordinate}
- *          p2 another extremal point of the envelope P.
+ *          p2 another extremal point of the Envelope P.
  * @param {jsts.geom.Coordinate}
- *          q1 one extremal point of the envelope Q.
+ *          q1 one extremal point of the Envelope Q.
  * @param {jsts.geom.Coordinate}
- *          q2 another extremal point of the envelope Q.
+ *          q2 another extremal point of the Envelope Q.
  * @return {boolean} <code>true</code> if Q intersects P.
  */
 jsts.geom.Envelope.intersectsEnvelope = function(p1, p2, q1, q2) {
