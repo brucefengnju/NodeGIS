@@ -111,6 +111,24 @@ jsts.geom.CoordinateList.prototype.insertCoordinate = function(index, coord,
 };
 
 /**
+ * Inserts an array/list of coordinates to the list
+ * @param {Number}
+           index The index where to insert the coordinates.
+ * @param {Array.<jsts.geom.Coordinate>}
+           coords the array/list of coordinates.
+ * @param {boolean}
+           allowRepeated if set to false, repeated coordinates are collapsed.
+ **/
+jsts.geom.CoordinateList.prototype.insertCoordinates = function(index,coords,allowRepeated){
+  if(coords && coords.length){
+    var il = coords.length;
+    for(var i =0;i<il;i++){
+      this.insertCoordinate(index + i,coords[i],allowRepeated);
+    }
+  }
+}
+
+/**
  * Ensure this coordList is a ring, by adding the start point if necessary
  */
 jsts.geom.CoordinateList.prototype.closeRing = function() {
@@ -142,5 +160,15 @@ jsts.geom.CoordinateList.prototype.toArray = function() {
  jsts.geom.CoordinateList.prototype.clear = function () {
    this.splice(0,this.length);
  }
-
+ 
+ /**
+  * toString
+  **/
+ jsts.geom.CoordinateList.prototype.toString = function(){
+  var str = "CoordinateList:[";
+  var coordArray = this.toArray();
+  str += coordArray.toString();
+  str +="]";
+  return str;
+ }
 // TODO: port rest?
