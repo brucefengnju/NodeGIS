@@ -10,7 +10,8 @@ test('coordinateList constructor',function () {
     coords[0] = new jsts.geom.Coordinate();
     coords[1] = new jsts.geom.Coordinate(1,1);
     var coordList = new jsts.geom.CoordinateList(coords);
-    return coordList.length == 2 && coordList[0].equals(coords[0]) && coordList[1].equals(coords[1]);
+    return coordList.length == 2 && coordList[0].equals(coords[0]) 
+            && coordList[1].equals(coords[1]);
  });
  test('coordinateList constructor:no repeat',function () {
     var coords = [];
@@ -26,12 +27,65 @@ test('coordinateList constructor',function () {
     coords[1] = new jsts.geom.Coordinate();
     var coordList = new jsts.geom.CoordinateList(coords);
     coordList.clear();
-    return coordList.length == 0 && coordList[0] === undefined;
+    return coordList.length == 0 && typeof coordList[0] === 'undefined';
  });
- test('CoordinateArrays:removeRepeatedPoints',function(){
+ test('coordinateList.add:add coords',function(){
     var coords = [];
     coords[0] = new jsts.geom.Coordinate();
-    coords[1] = new jsts.geom.Coordinate();
-    coords = jsts.geom.CoordinateArrays.removeRepeatedPoints(coords);
-    return coords.length === 1 && coords[1] === undefined;
+    coords[1] = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList();
+    var length1= coordList.length;
+    coordList.add(coords);
+    return 0 == length1 && 2 == coordList.length;
  });
+  test('coordinateList.add:add coords reverse',function(){
+    var coords = [];
+    coords[0] = new jsts.geom.Coordinate();
+    coords[1] = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList();
+    var length1= coordList.length;
+    coordList.add(coords,true,false);
+    return 0 == length1 && 2 == coordList.length 
+    && coordList[1].equals(coords[0]) && coordList[0].equals(coords[1]);
+ });
+  test('CoordinateList.addCoordinate: add coordinate',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coordList = new jsts.geom.CoordinateList();
+    var length1 = coordList.length;
+    coordList.addCoordinate(coord);
+    return 0 == length1 && 1== coordList.length && coordList[0].equals(coord);
+  });
+  test('CoordinateList.addCoordinate: add coordinate no repeat',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList([coord,coord1]);
+    coordList.addCoordinate(coord,false);
+    return 2== coordList.length && coordList[0].equals(coord);
+  });
+  test('CoordinateList.insertCoordinate: insert coordiante',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(2,2,0);
+    var coordList = new jsts.geom.CoordinateList([coord,coord1]);
+    var length1 = coordList.length;
+    coordList.insertCoordinate(1,coord2);
+    return 2 == length1 && 3 == coordList.length && coordList[1].equals(coord2);
+  });
+  test('CoordinateList.insertCoordinate:insert coordinate repeated',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList([coord,coord1]);
+    var length1 = coordList.length;
+    coordList.insertCoordinate(1,coord2,true);
+    return 2 == length1 && 3 == coordList.length && coordList[1].equals(coord2);
+  });
+  test('CoordinateList.toArray: coordlist to array',function(){
+    var coord = new jsts.geom.Coordinate();
+    var coord1 = new jsts.geom.Coordinate(1,1);
+    var coord2 = new jsts.geom.Coordinate(1,1);
+    var coordList = new jsts.geom.CoordinateList([coord,coord1,coord2]);
+    var coordArray = coordList.toArray();
+    return 3 == coordArray.length && coordArray instanceof Array && coordArray[0].equals(coord)
+            && coordArray[1].equals(coord1) && coordArray[2].equals(coord2);
+  });
