@@ -44,7 +44,9 @@ jsts.geom.CoordinateList.prototype = new Array();
  */
 jsts.geom.CoordinateList.prototype.add = function(coords, allowRepeated,
     direction) {
-  direction = direction || true;
+  if(typeof direction === 'undefined' || direction === null){
+    direction = true;
+  }
   coords = coords || [];
   if (direction) {
     var length = coords.length;
@@ -74,9 +76,12 @@ jsts.geom.CoordinateList.prototype.addCoordinate = function(coord,
   // don't add duplicate coordinates
   if (!allowRepeated) {
     if (this.length >= 1) {
-      var last = this[this.length - 1];
-      if (last.equals(coord))
-        return;
+      var length = this.length;
+      for(var i=0;i<length;i++){
+        if(this[i].equals(coord)){
+          return ;
+        }
+      }
     }
   }
   this.push(coord);
@@ -96,14 +101,10 @@ jsts.geom.CoordinateList.prototype.insertCoordinate = function(index, coord,
     allowRepeated) {
   // don't add duplicate coordinates
   if (!allowRepeated) {
-    var before = index > 0 ? index - 1 : -1;
-    if (before !== -1 && this[before].equals(coord)) {
-      return;
-    }
-
-    var after = index < this.length - 1 ? index + 1 : -1;
-    if (after !== -1 && this[after].equals(coord)) {
-      return;
+    for(var i=0;i<this.length;i++){
+      if(this[i].equals(coord)){
+        return;
+      }
     }
   }
   this.splice(index, 0, coord);
