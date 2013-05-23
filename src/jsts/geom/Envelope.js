@@ -117,6 +117,10 @@ jsts.geom.Envelope.prototype.init = function() {
  *          p2 the second Coordinate.
  */
 jsts.geom.Envelope.prototype.initFromCoordinates = function(p1, p2) {
+  if(!p1.sameDimension(p2)){
+    this.setToNull();
+    return;
+  }
   if(p1.compareTo(p2) === -1){
     this.minCoord = p1;
     this.maxCoord = p2;
@@ -262,7 +266,18 @@ jsts.geom.Envelope.prototype.expandToInclude = function() {
  *          p the Coordinate to expand to include.
  */
 jsts.geom.Envelope.prototype.expandToIncludeCoordinate = function(p) {
-  this.expandToIncludeValues(p.x, p.y);
+    if(!this.minCoord.sameDimension(p)){
+        return;
+    }
+    if(this.isNull()){
+        return;
+    }
+    if(p.compareTo(this.minCoord)<0){
+        this.minCoord = p;
+    }
+    if(p.compareTo(this.maxCoord)>0){
+        this.maxCoord = p;
+    }
 };
 
 
@@ -278,23 +293,15 @@ jsts.geom.Envelope.prototype.expandToIncludeEnvelope = function(other) {
   if (other.isNull()) {
     return;
   }
-  if (this.isNull()) {
-    this.minx = other.getMinX();
-    this.maxx = other.getMaxX();
-    this.miny = other.getMinY();
-    this.maxy = other.getMaxY();
-  } else {
-    if (other.minx < this.minx) {
-      this.minx = other.minx;
+  if(this.isNull()){
+    this.minCoord = other.minCoord;
+    this.maxCoord = other.maxCoord;
+  }else{
+    if(other.minCoord.compareTo(this.minCoord)<0){
+      this.minCoord = other.minCoord;
     }
-    if (other.maxx > this.maxx) {
-      this.maxx = other.maxx;
-    }
-    if (other.miny < this.miny) {
-      this.miny = other.miny;
-    }
-    if (other.maxy > this.maxy) {
-      this.maxy = other.maxy;
+    if(other.maxCoord.compareTo(other.maxCoord)>0){
+      this.maxCoord = other.maxCoord;
     }
   }
 };
@@ -308,8 +315,10 @@ jsts.geom.Envelope.prototype.expandToIncludeEnvelope = function(other) {
 jsts.geom.Envelope.prototype.expandBy = function() {
   if (arguments.length === 1) {
     this.expandByDistance(arguments[0]);
-  } else {
+  } else if(arguments.length === 2) {
     this.expandByDistances(arguments[0], arguments[1]);
+  }else{
+    this.expandByDistances(arguments[0],arguments[1],arguments[2]);
   }
 };
 
@@ -322,7 +331,12 @@ jsts.geom.Envelope.prototype.expandBy = function() {
  *          distance the distance to expand the Envelope.
  */
 jsts.geom.Envelope.prototype.expandByDistance = function(distance) {
-  this.expandByDistances(distance, distance);
+  if(this.minCoord.z === null){
+    this.expandByDistances(distance, distance);  
+  }else{
+    this.expandByDistances(distance,distance,distance);
+  }
+  
 };
 
 
@@ -334,19 +348,25 @@ jsts.geom.Envelope.prototype.expandByDistance = function(distance) {
  *          deltaX the distance to expand the Envelope along the the X axis.
  * @param {number}
  *          deltaY the distance to expand the Envelope along the the Y axis.
+ * @param {number}
+ *          deltaY the distance to expand the Envelope along the the z axis.
  */
-jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY) {
+jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY,deltaZ) {
   if (this.isNull()) {
     return;
   }
-
-  this.minx -= deltaX;
-  this.maxx += deltaX;
-  this.miny -= deltaY;
-  this.maxy += deltaY;
+  this.minCoord.x -= deltaX;
+  this.maxCoord.x += deltaX;
+  this.minCoord.y -= deltaY;
+  this.maxCoord.y += deltaY;
+  
+  if(this.minCoord.z !== null && deltaZ){
+    this.minCoord.z -= deltaZ;
+    this.maxCoord.z += deltaZ;
+  }
 
   // check for Envelope disappearing
-  if (this.minx > this.maxx || this.miny > this.maxy) {
+  if(this.minCoord.compareTo(this.maxCoord) >0){
     this.setToNull();
   }
 };
@@ -359,13 +379,23 @@ jsts.geom.Envelope.prototype.expandByDistances = function(deltaX, deltaY) {
  *          transX the amount to translate along the X axis.
  * @param {number}
  *          transY the amount to translate along the Y axis.
+ * @param {number}
+ *          transZ the amount to translate along the Z axis.
  */
-jsts.geom.Envelope.prototype.translate = function(transX, transY) {
+jsts.geom.Envelope.prototype.translate = function(transX, transY,transZ) {
   if (this.isNull()) {
     return;
   }
-  this.init(this.minx + transX, this.maxx + transX, this.miny + transY,
-      this.maxy + transY);
+  if(this.minCoord.z !== null && transZ){
+    this.minCoord.setCoordinate(this.minCoord.x + transX,this.minCoord.y + transY,
+                                                         this.minCoord.z + transZ);
+    this.maxCoord.setCoordinate(this.maxCoord.x + transX,this.maxCoord.y + transY,
+                                                         this.maxCoord.z + transZ);
+  }else{
+    this.minCoord.setCoordinate(this.minCoord.x + transX,this.minCoord.y + transY);
+    this.maxCoord.setCoordinate(this.maxCoord.x + transX,this.maxCoord.y + transY);
+  }
+  
 };
 
 
@@ -380,8 +410,14 @@ jsts.geom.Envelope.prototype.centre = function() {
   if (this.isNull()) {
     return null;
   }
-  return new jsts.geom.Coordinate((this.minx + this.maxx) / 2.0,
-      (this.miny + this.maxy) / 2.0);
+  if(this.minCoord.z === null){
+    return new jsts.geom.Coordinate((this.minCoord.x + this.maxCoord.x)/2.0,
+                                    (this.minCoord.y + this.maxCoord.y)/2.0);
+  }else{
+    return new jsts.geom.Coordinate((this.minCoord.x + this.maxCoord.x)/2.0,
+                                    (this.minCoord.y + this.maxCoord.y)/2.0,
+                                    (this.minCoord.z + this.maxCoord.z)/2.0);
+  }
 };
 
 
@@ -395,16 +431,13 @@ jsts.geom.Envelope.prototype.centre = function() {
  *         null, or they do not intersect.
  */
 jsts.geom.Envelope.prototype.intersection = function(env) {
-  if (this.isNull() || env.isNull() || !this.intersects(env)) {
+  if (this.isNull() || env.isNull() || !this.intersects(env)
+            || !this.minCoord.sameDimension(env.minCoord)) {
     return new jsts.geom.Envelope();
   }
-
-  var intMinX = this.minx > env.minx ? this.minx : env.minx;
-  var intMinY = this.miny > env.miny ? this.miny : env.miny;
-  var intMaxX = this.maxx < env.maxx ? this.maxx : env.maxx;
-  var intMaxY = this.maxy < env.maxy ? this.maxy : env.maxy;
-
-  return new jsts.geom.Envelope(intMinX, intMaxX, intMinY, intMaxY);
+  var intMinCoord = this.minCoord.compareTo(env.minCoord) > 0 ? this.minCoord : env.minCoord;
+  var intMaxCoord = this.maxCoord.compareTo(env.maxCoord) < 0 ? this.maxCoord : env.maxCoord;
+  return new jsts.geom.Envelope(intMinCoord,intMaxCoord);
 };
 
 
@@ -421,9 +454,7 @@ jsts.geom.Envelope.prototype.intersects = function() {
     return this.intersectsEnvelope(arguments[0]);
   } else if (arguments[0] instanceof jsts.geom.Coordinate) {
     return this.intersectsCoordinate(arguments[0]);
-  } else {
-    return this.intersectsValues(arguments[0], arguments[1]);
-  }
+  } 
 };
 
 
@@ -438,12 +469,11 @@ jsts.geom.Envelope.prototype.intersects = function() {
  *         overlap.
  */
 jsts.geom.Envelope.prototype.intersectsEnvelope = function(other) {
-  if (this.isNull() || other.isNull()) {
+  if (this.isNull() || other.isNull() || !this.minCoord.sameDimension(other.minCoord)) {
     return false;
   }
-
-  var result = !(other.minx > this.maxx || other.maxx < this.minx ||
-      other.miny > this.maxy || other.maxy < this.miny);
+  var result = !(other.minCoord.compareTo(this.maxCoord) >0 
+                || other.maxCoord.compareTo(this.minCoord)<0);
   return result;
 };
 
@@ -458,27 +488,10 @@ jsts.geom.Envelope.prototype.intersectsEnvelope = function(other) {
  *         <code>Envelope.</code>
  */
 jsts.geom.Envelope.prototype.intersectsCoordinate = function(p) {
-  return this.intersectsValues(p.x, p.y);
-};
-
-
-/**
- * Check if the point <code>(x, y)</code> overlaps (lies inside) the region of
- * this <code>Envelope</code>.
- *
- * @param {number}
- *          x the x-ordinate of the point.
- * @param {number}
- *          y the y-ordinate of the point.
- * @return {boolean} <code>true</code> if the point overlaps this
- *         <code>Envelope.</code>
- */
-jsts.geom.Envelope.prototype.intersectsValues = function(x, y) {
-  if (this.isNull()) {
-    return false;
+  if(this.minCoord.sameDimension(p)){
+    return !(p.compareTo(this.minCoord) < 0 || p.compareTo(this.maxCoord)>0);
   }
-
-  return !(x > this.maxx || x < this.minx || y > this.maxy || y < this.miny);
+  return false;
 };
 
 
@@ -495,8 +508,6 @@ jsts.geom.Envelope.prototype.contains = function() {
     return this.containsEnvelope(arguments[0]);
   } else if (arguments[0] instanceof jsts.geom.Coordinate) {
     return this.containsCoordinate(arguments[0]);
-  } else {
-    return this.containsValues(arguments[0], arguments[1]);
   }
 };
 
@@ -576,27 +587,6 @@ jsts.geom.Envelope.prototype.covers = function() {
   }
 };
 
-
-/**
- * Tests if the given point lies in or on the Envelope.
- *
- * @param {number}
- *          x the x-coordinate of the point which this <code>Envelope</code>
- *          is being checked for containing.
- * @param {number}
- *          y the y-coordinate of the point which this <code>Envelope</code>
- *          is being checked for containing.
- * @return {boolean} <code>true</code> if <code>(x, y)</code> lies in the
- *         interior or on the boundary of this <code>Envelope</code>.
- */
-jsts.geom.Envelope.prototype.coversValues = function(x, y) {
-  if (this.isNull()) {
-    return false;
-  }
-  return x >= this.minx && x <= this.maxx && y >= this.miny && y <= this.maxy;
-};
-
-
 /**
  * Tests if the given point lies in or on the Envelope.
  *
@@ -607,7 +597,10 @@ jsts.geom.Envelope.prototype.coversValues = function(x, y) {
  *         the boundary of this <code>Envelope</code>.
  */
 jsts.geom.Envelope.prototype.coversCoordinate = function(p) {
-  return this.coversValues(p.x, p.y);
+  if(this.minCoord.sameDimension(p)){
+    return p.compareTo(this.minCoord) >= 0 && p.compareTo(this.maxCoord) <=0;
+  }
+  return false;
 };
 
 
@@ -621,11 +614,10 @@ jsts.geom.Envelope.prototype.coversCoordinate = function(p) {
  *         <code>other.</code>
  */
 jsts.geom.Envelope.prototype.coversEnvelope = function(other) {
-  if (this.isNull() || other.isNull()) {
+  if (this.isNull() || other.isNull() || !this.minCoord.sameDimension(other.minCoord)) {
     return false;
   }
-  return other.minx >= this.minx && other.maxx <= this.maxx &&
-      other.miny >= this.miny && other.maxy <= this.maxy;
+  return other.minCoord.compareTo(this.minCoord) >=0 && other.maxCoord.compareTo(this.maxCoord) <=0;
 };
 
 
@@ -639,33 +631,18 @@ jsts.geom.Envelope.prototype.coversEnvelope = function(other) {
  *         the distance is the Euclidean distance between the closest points.
  */
 jsts.geom.Envelope.prototype.distance = function(env) {
+  if(!this.minCoord.sameDimension(evn.minCoord)){
+    return null;
+  }
   if (this.intersects(env)) {
     return 0;
   }
-  var dx = 0.0;
-  if (this.maxx < env.minx) {
-    dx = env.minx - this.maxx;
+  if(this.maxCoord.compareTo(env.minCoord) <=0){
+    return this.maxCoord.distance(env.minCoord);
   }
-  if (this.minx > env.maxx) {
-    dx = this.minx - env.maxx;
+  if(this.minCoord.compareTo(env.maxCoord)>=0){
+    return this.minCoord.distance(env.maxCoord);
   }
-
-  var dy = 0.0;
-  if (this.maxy < env.miny) {
-    dy = env.miny - this.maxy;
-  }
-  if (this.miny > env.maxy) {
-    dy = this.miny - env.maxy;
-  }
-
-  // if either is zero, the Envelopes overlap either vertically or horizontally
-  if (dx === 0.0) {
-    return dy;
-  }
-  if (dy === 0.0) {
-    return dx;
-  }
-  return Math.sqrt(dx * dx + dy * dy);
 };
 
 
@@ -678,8 +655,10 @@ jsts.geom.Envelope.prototype.equals = function(other) {
   if (this.isNull()) {
     return other.isNull();
   }
-  return this.maxx === other.maxx && this.maxy === other.maxy &&
-      this.minx === other.minx && this.miny === other.miny;
+  if(this.minCoord.sameDimension(other.minCoord)){
+    return this.minCoord.equals(other.minCoord) && this.maxCoord.equals(this.maxCoord);
+  }
+  return false;
 };
 
 
@@ -687,8 +666,7 @@ jsts.geom.Envelope.prototype.equals = function(other) {
  * @return {string} String representation of this <code>Envelope.</code>
  */
 jsts.geom.Envelope.prototype.toString = function() {
-  return 'Env[' + this.minx + ' : ' + this.maxx + ', ' + this.miny + ' : ' +
-      this.maxy + ']';
+    return 'Env[' + this.minCoord.toString() + ', ' + this.maxCoord.toString() + ']';
 };
 
 
@@ -706,7 +684,7 @@ jsts.geom.Envelope.prototype.toString = function() {
  *          q the point to test for intersection.
  * @return {boolean} <code>true</code> if q intersects the Envelope p1-p2.
  */
-jsts.geom.Envelope.intersects = function(p1, p2, q) {
+/*jsts.geom.Envelope.intersects = function(p1, p2, q) {
   if (arguments.length === 4) {
     return jsts.geom.Envelope.intersectsEnvelope(arguments[0], arguments[1],
         arguments[2], arguments[3]);
@@ -722,7 +700,7 @@ jsts.geom.Envelope.intersects = function(p1, p2, q) {
   }
   return false;
 };
-
+*/
 
 /**
  * Test the Envelope defined by p1-p2 for intersection with the Envelope defined
@@ -738,7 +716,7 @@ jsts.geom.Envelope.intersects = function(p1, p2, q) {
  *          q2 another extremal point of the Envelope Q.
  * @return {boolean} <code>true</code> if Q intersects P.
  */
-jsts.geom.Envelope.intersectsEnvelope = function(p1, p2, q1, q2) {
+/*jsts.geom.Envelope.intersectsEnvelope = function(p1, p2, q1, q2) {
   var minq = Math.min(q1.x, q2.x);
   var maxq = Math.max(q1.x, q2.x);
   var minp = Math.min(p1.x, p2.x);
@@ -763,12 +741,12 @@ jsts.geom.Envelope.intersectsEnvelope = function(p1, p2, q1, q2) {
     return false;
   }
   return true;
-};
+};*/
 
 
 /**
  * @return {jsts.geom.Envelope} A new instance copied from this.
  */
 jsts.geom.Envelope.prototype.clone = function() {
-  return new jsts.geom.Envelope(this.minx, this.miny, this.maxx, this.maxy);
+    return new jsts.geom.Envelope(this.minCoord,this.maxCoord);
 };
