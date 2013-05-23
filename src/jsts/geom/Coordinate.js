@@ -191,7 +191,7 @@
   };
 
   jsts.geom.Coordinate.prototype.toString = function() {
-    var coordStr = '(' + this.x + ', ' + this.y ;
+    var coordStr = '(' + this.x + ',' + this.y ;
     if(null != this.z && 'undefined'!= typeof this.z){
       coordStr += ',' + this.z;
     }
