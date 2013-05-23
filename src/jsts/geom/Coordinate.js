@@ -69,7 +69,15 @@
     this.m = other.m;
   };
 
-
+  /**
+   * return whether two coordinate is same dimension
+   * <code>other</code>
+   *
+   * @param {Coordinate}
+   **/
+  jsts.geom.Coordinate.prototype.sameDimension = function(other){
+    return this.z === null && other.z === null || this.z !== null && other.z !== null;
+  }
   /**
    * Clones this instance.
    *
