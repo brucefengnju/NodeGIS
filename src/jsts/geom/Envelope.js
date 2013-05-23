@@ -48,51 +48,6 @@ jsts.geom.Envelope.prototype.minCoord = null;
 jsts.geom.Envelope.prototype.maxCoord = null;
 
 /**
- * the minimum x-coordinate
- *
- * @type {?number}
- */
-jsts.geom.Envelope.prototype.minx = null;
-
-
-/**
- * the maximum x-coordinate
- *
- * @type {?number}
- */
-jsts.geom.Envelope.prototype.maxx = null;
-
-
-/**
- * the minimum y-coordinate
- *
- * @type {?number}
- */
-jsts.geom.Envelope.prototype.miny = null;
-
-
-/**
- * the maximum y-coordinate
- *
- * @type {?number}
- */
-jsts.geom.Envelope.prototype.maxy = null;
-
-/**
- * the minimum z-coordinate
- *
- * @type {?number}
- **/
-jsts.geom.Envelope.prototype.minz = null;
-
-/**
- * the maxmum z-coordinate
- *
- * @type {?number}
- **/
-jsts.geom.Envelope.prototype.maxz = null;
-
-/**
  * Creates an <code>Envelope</code> for a region defined by maximum and
  * minimum values.
  *
@@ -101,8 +56,20 @@ jsts.geom.Envelope.prototype.maxz = null;
 jsts.geom.Envelope.prototype.init = function() {
   if (arguments[0] instanceof jsts.geom.Coordinate &&
       arguments.length === 2) {
-    this.initFromCoordinates(arguments[0], arguments[1]);
-  }else {
+    if(arguments[0].sameDimension(arguments[1])){
+        if(arguments[0].compareTo(arguments[1]) <= 0){
+            this._initFromCoordinates(arguments[0], arguments[1]);    
+        }else{
+            this._initFromCoordinates(arguments[1], arguments[0]);    
+        }
+    }else{
+        this.setToNull();
+    }
+  }else if(arguments.length === 1 && arguments[0] instanceof jsts.geom.Envelope){
+    this._initFromEnvelope(arguments[0]);
+  }else if(arguments.length === 1 && arguments[0] instanceof jsts.geom.Envelope2D){
+    this._initFromEnvelope2D(arguments[0]);
+  }else{
     this.setToNull();
   }
 };
@@ -116,7 +83,7 @@ jsts.geom.Envelope.prototype.init = function() {
  * @param {jsts.geom.Coordinate}
  *          p2 the second Coordinate.
  */
-jsts.geom.Envelope.prototype.initFromCoordinates = function(p1, p2) {
+jsts.geom.Envelope.prototype._initFromCoordinates = function(p1, p2) {
   if(!p1.sameDimension(p2)){
     this.setToNull();
     return;
@@ -131,19 +98,18 @@ jsts.geom.Envelope.prototype.initFromCoordinates = function(p1, p2) {
 
 };
 
-
 /**
  * Initialize an <code>Envelope</code> from an existing Envelope.
  *
  * @param {jsts.geom.Envelope}
  *          env the Envelope to initialize from.
  */
-jsts.geom.Envelope.prototype.initFromEnvelope = function(env) {
-  this.minCoord = evn.minCoord;
-  this.maxCoord = evn.maxCoord;
+jsts.geom.Envelope.prototype._initFromEnvelope = function(env) {
+  this.minCoord = env.minCoord;
+  this.maxCoord = env.maxCoord;
 };
 
-jsts.geom.Envelope.prototype.initFromEnvelope2D = function(env2D){
+jsts.geom.Envelope.prototype._initFromEnvelope2D = function(env2D){
   this.minCoord = new jsts.geom.Coordinate(env2D.minx,env2D.miny);
   this.maxCoord = new jsts.geom.Coordinate(env2D.maxx,env2D.maxy);
 }
@@ -200,7 +166,7 @@ jsts.geom.Envelope.prototype.getDepth = function(){
   if(this.isNull()){
     return 0;
   }
-  if(this.minCoord.z !== null && this.maxCoord.z != null){
+  if(this.minCoord.z !== null && this.maxCoord.z !== null){
     return this.maxCoord.z - this.minCoord.z;
   }else{
     return 0;
@@ -231,7 +197,7 @@ jsts.geom.Envelope.prototype.getMaxCoordinate = function(){
  * @return {number} the area of the Envelope, 0.0 if the Envelope is null.
  */
 jsts.geom.Envelope.prototype.getArea = function() {
-  return getWidth() * getHeight();
+  return this.getWidth() * this.getHeight();
 };
 
 /**
@@ -240,7 +206,7 @@ jsts.geom.Envelope.prototype.getArea = function() {
  * @return {number} the volume of the Envelope, 0.0 if the Envelope is null.
  */
 jsts.geom.Envelope.prototype.getVolume = function(){
-  return getWidth() * getHeight() * getDepth();
+  return this.getWidth() * this.getHeight() * this.getDepth();
 }
 
 /**
